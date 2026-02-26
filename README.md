@@ -36,5 +36,5 @@ python3 Zone-DNSenum.py -d "$DOMAIN" -s "$IP" -w "$SUBDOMAIN_WORDLIST_PATH" [opt
 ### Example
 
 ```bash
-python3 Zone-DNSenum.py -d example.com -s "$DNS_SERVER_IP" -w "$SUBDOMAIN_WORDLIST_PATH" -o results.txt
+python3 Zone-DNSenum.py -d "$DOMAIN" -s "$DNS_SERVER_IP" -w "$SUBDOMAIN_WORDLIST_PATH" -o results.txt
 ```
