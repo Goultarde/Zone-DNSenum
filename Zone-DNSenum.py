@@ -29,7 +29,7 @@ def write_to_file(file_path, domain, ip):
             with open(file_path, 'a') as f:
                 f.write(data + "\n")
 
-def check_single_sub(sub, parent_domain, depth, executor, args):
+def check_single_sub(sub, parent_domain, depth, executor, args, ignore_refused=False, ignore_noanswer=False):
     """Worker function for DNS brute-forcing."""
     fqdn = f"{sub}.{parent_domain}"
     resolver = get_resolver(args.server)
@@ -46,7 +46,25 @@ def check_single_sub(sub, parent_domain, depth, executor, args):
             # Recurse on the discovered subdomain if depth permits
             task_queue.put(1)
             executor.submit(recursive_enum, fqdn, depth + 1, executor, args)
-    except:
+    except dns.resolver.NXDOMAIN:
+        pass
+    except dns.resolver.NoAnswer:
+        if not ignore_noanswer:
+            print(f"\033[0;33m[+] Found (No A record):\033[0m {fqdn}")
+            with lock:
+                found_records.append((fqdn, "N/A", "Brute-force (No A)"))
+            write_to_file(args.output, fqdn, "N/A")
+            task_queue.put(1)
+            executor.submit(recursive_enum, fqdn, depth + 1, executor, args)
+    except dns.resolver.NoNameservers:
+        if not ignore_refused:
+            print(f"\033[0;33m[+] Found (Delegated/Refused):\033[0m {fqdn}")
+            with lock:
+                found_records.append((fqdn, "Refused/Delegated", "Brute-force (Delegated)"))
+            write_to_file(args.output, fqdn, "Refused/Delegated")
+            task_queue.put(1)
+            executor.submit(recursive_enum, fqdn, depth + 1, executor, args)
+    except Exception:
         pass
     finally:
         task_queue.task_done()
@@ -96,13 +114,27 @@ def recursive_enum(domain, depth, executor, args):
 
     # 2. Brute-force Fallback (Only if AXFR was not possible)
     if not axfr_success and depth < args.depth:
+        # --- Baseline check to prevent false positives ---
+        ignore_refused = False
+        ignore_noanswer = False
+        try:
+            get_resolver(args.server).resolve(f"dummy123testwildcard.{clean_domain}", 'A')
+        except dns.resolver.NXDOMAIN:
+            pass
+        except dns.resolver.NoAnswer:
+            ignore_noanswer = True
+        except dns.resolver.NoNameservers:
+            ignore_refused = True
+        except Exception:
+            pass
+
         try:
             with open(args.wordlist, 'r') as f:
                 for line in f:
                     sub = line.strip()
                     if sub and not sub.startswith('#'):
                         task_queue.put(1)
-                        executor.submit(check_single_sub, sub, clean_domain, depth, executor, args)
+                        executor.submit(check_single_sub, sub, clean_domain, depth, executor, args, ignore_refused, ignore_noanswer)
         except FileNotFoundError:
             print(f"\033[1;31m[!] Error:\033[0m Wordlist file not found.")
 
@@ -110,7 +142,7 @@ def recursive_enum(domain, depth, executor, args):
 
 def main():
     parser = argparse.ArgumentParser(description="Zone-DNSenum: Recursive DNS Zone Transfer & Enumerator")
-    parser.add_argument("-d", "--domain", required=True, help="Domain to enumerate")
+    parser.add_argument("-d", "--domain", nargs='+', required=True, help="Domain(s) or file containing list of domains to enumerate")
     parser.add_argument("-s", "--server", required=True, help="DNS server IP")
     parser.add_argument("-w", "--wordlist", required=True, help="Wordlist for brute-forcing")
     parser.add_argument("-t", "--threads", type=int, default=40, help="Concurrent threads (default: 40)")
@@ -124,12 +156,29 @@ def main():
         with open(args.output, 'w') as f:
             pass 
 
-    print(f"\033[1;35m[ START ] Zone-DNSenum - Target: {args.domain}\033[0m")
+    target_domains = []
+    for d in args.domain:
+        if os.path.isfile(d):
+            with open(d, 'r') as f:
+                target_domains.extend([line.strip() for line in f if line.strip() and not line.startswith('#')])
+        else:
+            target_domains.append(d)
+
+    # Remove duplicates to avoid redundant checks
+    target_domains = list(dict.fromkeys(target_domains))
+
+    if not target_domains:
+        print("\033[1;31m[!] No valid domains provided. Exiting.\033[0m")
+        return
+
+    targets_str = ', '.join(target_domains) if len(target_domains) <= 3 else f"{len(target_domains)} domains"
+    print(f"\033[1;35m[ START ] Zone-DNSenum - Targets: {targets_str}\033[0m")
     
     try:
         with ThreadPoolExecutor(max_workers=args.threads) as executor:
-            task_queue.put(1)
-            executor.submit(recursive_enum, args.domain, 1, executor, args)
+            for domain in target_domains:
+                task_queue.put(1)
+                executor.submit(recursive_enum, domain, 1, executor, args)
             
             # Keep main thread alive until all recursive tasks complete
             task_queue.join()
