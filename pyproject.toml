@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zone-dnsenum"
+version = "1.0.0"
+description = "Recursive DNS Zone Transfer & Enumerator"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+keywords = ["dns", "enumeration", "zone-transfer", "axfr", "security", "recon"]
+dependencies = [
+    "dnspython>=2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Goultarde/Zone-DNSenum"
+Repository = "https://github.com/Goultarde/Zone-DNSenum"
+
+[project.scripts]
+zone-dnsenum = "zone_dnsenum.core:main"

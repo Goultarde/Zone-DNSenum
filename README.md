@@ -10,23 +10,39 @@ Zone-DNSenum is a Python-based tool for recursive DNS enumeration. It attempts A
 - Output saving capability.
 - Asynchronous queuing system for performance.
 
-## Requirements
+## Installation
 
-The tool requires Python 3 and the `dnspython` package. Install the required dependency using:
+### pipx (recommended)
 
 ```bash
-pip install dnspython
+pipx install git+https://github.com/Goultarde/Zone-DNSenum.git
 ```
+
+### pip
+
+```bash
+pip install git+https://github.com/Goultarde/Zone-DNSenum.git
+```
+
+### From source
+
+```bash
+git clone https://github.com/Goultarde/Zone-DNSenum.git
+cd Zone-DNSenum
+pip install .
+```
+
+Once installed, the `zone-dnsenum` command is available globally.
 
 ## Usage
 
 ```bash
-python3 Zone-DNSenum.py -d "$DOMAIN" -s "$IP" -w "$SUBDOMAIN_WORDLIST_PATH" [options]
+zone-dnsenum -d "$DOMAIN" -s "$IP" -w "$SUBDOMAIN_WORDLIST_PATH" [options]
 ```
 
 ### Arguments
 
-- `-d, --domain`   : Target domain (required)
+- `-d, --domain`   : Target domain(s) or file containing a list of domains (required)
 - `-s, --server`   : DNS Server IP to query (required)
 - `-w, --wordlist` : Path to the subdomain wordlist (required)
 - `-t, --threads`  : Number of threads for brute-forcing (default: 40)
@@ -36,5 +52,5 @@ python3 Zone-DNSenum.py -d "$DOMAIN" -s "$IP" -w "$SUBDOMAIN_WORDLIST_PATH" [opt
 ### Example
 
 ```bash
-python3 Zone-DNSenum.py -d "$DOMAIN" -s "$DNS_SERVER_IP" -w "$SUBDOMAIN_WORDLIST_PATH" -o results.txt
+zone-dnsenum -d "$DOMAIN" -s "$DNS_SERVER_IP" -w "$SUBDOMAIN_WORDLIST_PATH" -o results.txt
 ```
