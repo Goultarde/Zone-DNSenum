@@ -46,7 +46,7 @@ zone-dnsenum -d "$DOMAIN" -s "$IP" -w "$SUBDOMAIN_WORDLIST_PATH" [options]
 - `-s, --server`   : DNS Server IP to query (required)
 - `-w, --wordlist` : Path to the subdomain wordlist (required)
 - `-t, --threads`  : Number of threads for brute-forcing (default: 40)
-- `--depth`        : Maximum recursion depth (default: 3)
+- `--depth`        : Maximum enumeration depth (1 = direct subdomains; default: 3)
 - `-o, --output`   : File to save the enumerated subdomains and IP addresses
 
 ### Example

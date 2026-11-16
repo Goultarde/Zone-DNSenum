@@ -108,7 +108,7 @@ def recursive_enum(domain, depth, executor, args):
     except Exception:
         axfr_success = False
 
-    if not axfr_success and depth < args.depth:
+    if not axfr_success and depth <= args.depth:
         ignore_refused = False
         ignore_noanswer = False
         try:
@@ -140,7 +140,7 @@ def main():
     parser.add_argument("-s", "--server", required=True, help="DNS server IP")
     parser.add_argument("-w", "--wordlist", required=True, help="Wordlist for brute-forcing")
     parser.add_argument("-t", "--threads", type=int, default=40, help="Concurrent threads (default: 40)")
-    parser.add_argument("--depth", type=int, default=3, help="Max recursion depth (default: 3)")
+    parser.add_argument("--depth", type=int, default=3, help="Max enumeration depth (1 = direct subdomains; default: 3)")
     parser.add_argument("-o", "--output", help="Output file (Format: domain ip)")
 
     args = parser.parse_args()
